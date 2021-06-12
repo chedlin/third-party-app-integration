@@ -1,9 +1,10 @@
 (function(){
-  var ID_TOKEN_KEY = 'idToken';
-      ACCESS_TOKEN_KEY = 'accessToken';
-      authKeys = [ACCESS_TOKEN_KEY, ID_TOKEN_KEY];
-      APP_HOST = 'https://app.energycurb.com';
-      API_ROOT = APP_HOST + '/api';
+  'use strict';
+  var ID_TOKEN_KEY = 'idToken',
+      ACCESS_TOKEN_KEY = 'accessToken',
+      authKeys = [ACCESS_TOKEN_KEY, ID_TOKEN_KEY],
+      APP_HOST = 'https://app.energycurb.com',
+      API_ROOT = APP_HOST + '/api',
       AUTH_CLIENT_ID = 'iKAoRkr3qyFSnJSr3bodZRZZ6Hm3GqC3',
       AUTH_DOMAIN = 'energycurb.auth0.com'
 
@@ -54,7 +55,7 @@
 
     openLiveDataChannel: function(){
       var self = this;
-      var currrentLocation = this.getCurrentLocation();
+      var currentLocation = this.getCurrentLocation();
       $('.live-data ul').empty();
       if(io){
         if(this.socket){
@@ -67,7 +68,7 @@
           });
         });
         socket.on('authorized', function(){
-          socket.emit('subscribe', currrentLocation.id);
+          socket.emit('subscribe', currentLocation.id);
         })
         socket.on('data', this.renderLiveData);
         // try to reconnect when dropped
@@ -243,8 +244,8 @@
 
     renderLocations: function(){
       var self = this,
-          locationList = $('.locations ul');
-          currentLocation = this.getCurrentLocation();
+          locationList = $('.locations ul'),
+          currentLocation = this.getCurrentLocation(),
           currentLocationProfile = $('.locations .current-location');
 
       locationList.empty();
