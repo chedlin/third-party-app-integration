@@ -1,14 +1,18 @@
 var io = require('socket.io-client');
 var API = require('../services/api');
 var config = require('../config');
+const {InfluxDB, Point, HttpError} = require('@influxdata/influxdb-client')
 
 var connectToLiveData = function(token){
   // initialize connection
-  var socket = io(`${config.API_ROOT}/circuit-data`, {
+  var socket = io(`${config.API_WS_ROOT}/circuit-data`, {
     transports: ['websocket']
   });
 
+  const influx = new InfluxDB(`${config.INFLUXDB_URL}`).getWriteApi("", `${config.INFLUXDB_BUCKET}`);
+
   socket.on('connect', function(){
+    console.log('connect');
     // when the client is able to successfully connect, send an 'authenticate' event with the user's id token
     socket.emit('authenticate', {
       token: token
@@ -18,6 +22,7 @@ var connectToLiveData = function(token){
 
 
   socket.on('authorized', function(){
+    console.log('authorized');
     // the client has been successfully authenticated, and can now subscribe to one or more locations
     // call the API to get their locations and subscribe them to the first one
     API.listLocations(token)
@@ -35,7 +40,27 @@ var connectToLiveData = function(token){
     console.error(err);
   });
 
-  socket.on('data', function(data){
+  socket.on('data', function(element){
+    let locationId = element['locationId'];
+    element['circuits'].forEach(circuit => {
+      const point = new Point('curbData')
+          .tag('label', circuit['label'])
+          .tag('main', circuit['main'])
+          .tag('circuit_type', circuit['circuit_type'])
+          .tag('production', circuit['production'])
+          .tag('battery', circuit['battery']);
+      if ('w' in circuit) {
+        point.intField('watts', circuit['w'])
+      }
+      if ('i' in circuit) {
+        point.floatField('i', circuit['i']);
+      }
+      if ('p' in circuit) {
+        point.floatField('p', circuit['p']);
+      }
+      influx.writePoint(point);
+    }
+    )
     // the client is receiving data for a specific location
     // data is a snapshot of the current state of all the circuits in a location
     // each circuit has a UUID, label, booleans that indicate whether they are mains circuits or production circuits, and a wattage value
